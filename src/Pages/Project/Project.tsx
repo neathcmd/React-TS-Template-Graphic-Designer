@@ -12,6 +12,9 @@ import {
 } from "lucide-react";
 import DefaultLayout from "../../Layouts/DefaultLayout";
 import { useTheme } from "../../context/ThemeContext";
+import profile2 from "../../assets/Profile2.jpg";
+import profile3 from "../../assets/Profile3.jpg";
+import profile4 from "../../assets/Profile4.jpg";
 
 interface ProjectData {
   id: number;
@@ -68,7 +71,7 @@ const Project: React.FC = () => {
         description:
           "Complete visual identity system for Oceanic, an eco-friendly swimwear brand focusing on sustainability and ocean preservation.",
         tools: ["Photoshop", "Illustrator", "After Effects"],
-        image: "/api/placeholder/600/400",
+        image: profile2,
         link: "https://oceanic.example.com",
         github: "https://github.com/oceanic-brand",
       },
@@ -79,7 +82,7 @@ const Project: React.FC = () => {
         description:
           "User interface and experience design for a meditation app with a focus on accessibility and clean aesthetics.",
         tools: ["Figma", "Sketch", "Principle"],
-        image: "/api/placeholder/600/400",
+        image: profile3,
       },
       {
         id: 3,
@@ -88,7 +91,7 @@ const Project: React.FC = () => {
         description:
           "Multi-platform advertising campaign for a sustainable urban footwear brand targeting environmentally conscious consumers.",
         tools: ["InDesign", "Illustrator", "Premiere Pro"],
-        image: "/api/placeholder/600/400",
+        image: profile4,
       },
     ],
     []

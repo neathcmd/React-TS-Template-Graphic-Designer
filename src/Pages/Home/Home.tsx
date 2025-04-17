@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import DefaultLayout from "../../Layouts/DefaultLayout";
 import { useTheme } from "../../context/ThemeContext";
 import { Link } from "react-router";
+import "../../styles/animetion.css";
 import HeroProfile from "../../assets/profile.png";
 import FakeCV from "../../CV/Fake-Resume.pdf";
 import Profile2 from "../../assets/Profile2.jpg";
@@ -11,14 +12,75 @@ import Profile4 from "../../assets/Profile4.jpg";
 const Home: React.FC = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
-  const heroRef = useRef(null);
+  const heroRef = useRef<HTMLElement | null>(null);
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const [displayedText, setDisplayedText] = useState("");
   const [currentRoleIndex, setCurrentRoleIndex] = useState(0);
+  const [typingState, setTypingState] = useState<
+    "typing" | "pausing" | "deleting"
+  >("typing");
 
-  // typeing text effect
-  const role = ["UX/UI Designer", "Graphic Designer"];
+  // typing text effect - expanded with more roles
+  const roles = ["UX/UI Designer", "Graphic Designer"];
+
+  useEffect(() => {
+    // Dynamic speeds for natural-feeling typing
+    const getTypingSpeed = () => Math.floor(Math.random() * 50) + 80; // 80-130ms
+    const getDeletingSpeed = () => Math.floor(Math.random() * 20) + 40; // 40-60ms
+    const pauseDuration = 500; // Duration to pause after typing
+
+    let typingTimer: ReturnType<typeof setTimeout> | null = null;
+    const currentRole = roles[currentRoleIndex];
+
+    const typeNextChar = () => {
+      setDisplayedText((prev) => {
+        if (prev.length < currentRole.length) {
+          return currentRole.substring(0, prev.length + 1);
+        }
+        return prev;
+      });
+
+      if (displayedText.length < currentRole.length - 1) {
+        typingTimer = setTimeout(typeNextChar, getTypingSpeed());
+      } else {
+        setTypingState("pausing");
+        typingTimer = setTimeout(
+          () => setTypingState("deleting"),
+          pauseDuration
+        );
+      }
+    };
+
+    const deleteChar = () => {
+      setDisplayedText((prev) => {
+        if (prev.length > 0) {
+          return prev.substring(0, prev.length - 1);
+        }
+        return "";
+      });
+
+      if (displayedText.length > 1) {
+        typingTimer = setTimeout(deleteChar, getDeletingSpeed());
+      } else {
+        setTypingState("typing");
+        setCurrentRoleIndex((prevIndex) => (prevIndex + 1) % roles.length);
+      }
+    };
+
+    // State machine for typing animation
+    if (typingState === "typing" && displayedText.length < currentRole.length) {
+      typingTimer = setTimeout(typeNextChar, getTypingSpeed());
+    } else if (typingState === "deleting" && displayedText.length > 0) {
+      typingTimer = setTimeout(deleteChar, getDeletingSpeed());
+    } else if (typingState === "typing" && displayedText.length === 0) {
+      typingTimer = setTimeout(typeNextChar, 1000); // Delay before starting new word
+    }
+
+    return () => {
+      if (typingTimer) clearTimeout(typingTimer);
+    };
+  }, [displayedText, currentRoleIndex, typingState, roles]);
 
   // Handle loading animation
   useEffect(() => {
@@ -30,7 +92,7 @@ const Home: React.FC = () => {
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (heroRef.current) {
-        const rect = (heroRef.current as HTMLElement).getBoundingClientRect();
+        const rect = heroRef.current.getBoundingClientRect();
         setCursorPos({
           x: e.clientX - rect.left,
           y: e.clientY - rect.top,
@@ -38,72 +100,23 @@ const Home: React.FC = () => {
       }
     };
 
-    // Fix: Define the mouseleave handler properly and capture rect inside it
     const handleMouseLeave = () => {
       if (heroRef.current) {
-        const rect = (heroRef.current as HTMLElement).getBoundingClientRect();
+        const rect = heroRef.current.getBoundingClientRect();
         setCursorPos({ x: rect.width / 2, y: rect.height / 2 });
       }
     };
 
-    // handle text typing effect
-    useEffect(() => {
-      let index = 0;
-      const currentRole = role[currentRoleIndex];
-      const typingSpeed = 150;
-      const deletingSpeed = 75;
-
-      // typing effect function
-      const typingInterval = setInterval(() => {
-        if (index < currentRole.length) {
-          setDisplayedText((prev) => prev + currentRole.charAt(index));
-          index += 1;
-        } else {
-          clearInterval(typingInterval);
-
-          // set time out to delay before deleting
-          setTimeout(() => {
-            index = currentRole.length;
-            const deletingInterval = setInterval(() => {
-              if (index > 0) {
-                setDisplayedText((prev) => prev.slice(0, -1));
-                index -= 1;
-              } else {
-                clearInterval(deletingInterval);
-                setCurrentRoleIndex((prev) => (prev + 1) % role.length);
-              }
-            }, deletingSpeed);
-          }, 1000); // pause for 1 sec before deleting texts
-        }
-      }, typingSpeed);
-
-      return () => clearInterval(typingInterval);
-    }, [currentRoleIndex, role]);
-
     const heroElement = heroRef.current;
     if (heroElement) {
-      (heroElement as HTMLElement).addEventListener(
-        "mousemove",
-        handleMouseMove
-      );
-      // Fixed: Added proper mouseleave handler with function reference
-      (heroElement as HTMLElement).addEventListener(
-        "mouseleave",
-        handleMouseLeave
-      );
+      heroElement.addEventListener("mousemove", handleMouseMove);
+      heroElement.addEventListener("mouseleave", handleMouseLeave);
     }
 
     return () => {
       if (heroElement) {
-        (heroElement as HTMLElement).removeEventListener(
-          "mousemove",
-          handleMouseMove
-        );
-        // Fixed: Cleanup with the same function reference
-        (heroElement as HTMLElement).removeEventListener(
-          "mouseleave",
-          handleMouseLeave
-        );
+        heroElement.removeEventListener("mousemove", handleMouseMove);
+        heroElement.removeEventListener("mouseleave", handleMouseLeave);
       }
     };
   }, []);
@@ -114,7 +127,7 @@ const Home: React.FC = () => {
       title: "Brand Redesign",
       description: "Revamped corporate identity with modern aesthetics.",
       image: Profile2,
-      alt: "Brand redesign project preview", // Added for accessibility
+      alt: "Brand redesign project preview",
       link: "/projects/1",
     },
     {
@@ -122,7 +135,7 @@ const Home: React.FC = () => {
       title: "Mobile App UI",
       description: "Intuitive interface design for a fintech application.",
       image: Profile3,
-      alt: "Mobile app UI project preview", // Added for accessibility
+      alt: "Mobile app UI project preview",
       link: "/projects/2",
     },
     {
@@ -130,7 +143,7 @@ const Home: React.FC = () => {
       title: "E-commerce Website",
       description: "Sleek online store with optimized user flow.",
       image: Profile4,
-      alt: "E-commerce website project preview", // Added for accessibility
+      alt: "E-commerce website project preview",
       link: "/projects/3",
     },
   ];
@@ -183,21 +196,40 @@ const Home: React.FC = () => {
                   <span className="text-2xl font-bold">---Hello</span> I'm Neath
                 </h1>
 
-                <h2
-                  data-aos="fade-right"
-                  data-aos-delay="200"
-                  className="absolute top-0 left-0 w-full text-center lg:text-left"
-                >
-                  <span className="inline-block min-w-[1ch]">
-                    {displayedText}
-                  </span>
-                  <span className="ml-1 sm:ml-1.5 inline-block w-0.5 sm:w-1 h-6 sm:h-8 bg-[#00ff99] animate-blink align-middle"></span>
-                </h2>
+                {/* Improved typing effect container */}
+                <div className="relative h-8 mb-4">
+                  <div
+                    className={`inline-flex items-center ${
+                      isDark ? "text-blue-300" : "text-blue-500"
+                    } font-medium text-xl`}
+                    data-aos="fade-right"
+                    data-aos-delay="200"
+                  >
+                    <span className="inline-block">I'm a </span>
+                    <div className="relative ml-2 min-w-[12ch] md:min-w-[16ch]">
+                      <span className="inline-block">{displayedText}</span>
+                      <span
+                        className={`ml-0.5 inline-block w-0.5 sm:w-1 h-6 ${
+                          typingState === "pausing" ? "animate-blink" : ""
+                        } bg-[#00ff99] align-middle`}
+                        style={{
+                          opacity:
+                            typingState === "pausing"
+                              ? Date.now() % 1000 > 500
+                                ? 1
+                                : 0
+                              : 1,
+                        }}
+                      ></span>
+                    </div>
+                  </div>
+                </div>
 
                 <h1
                   id="hero-title"
                   className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight"
                 >
+                  Creating Digital
                   <span
                     className={`block mt-2 ${
                       isDark ? "text-blue-400" : "text-blue-600"
@@ -240,20 +272,38 @@ const Home: React.FC = () => {
                 </div>
               </div>
               {/* Profile Section */}
-              <div className="order-1 md:order-2 flex justify-center">
+              <div className="order-1 md:order-2 flex justify-center relative">
                 <div
-                  className="relative w-48 h-48 sm:w-64 sm:h-64 md:w-72 md:h-72 lg:w-80 lg:h-80 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full shadow-2xl overflow-hidden transform hover:scale-105 transition-all duration-500"
+                  className="relative w-48 h-48 sm:w-64 sm:h-64 md:w-72 md:h-72 lg:w-80 lg:h-80 rounded-full shadow-2xl overflow-hidden transform transition-all duration-500 hover:scale-105 group"
                   role="presentation"
                 >
+                  {/* Background aura effect */}
+                  <div className="absolute inset-[-20px] bg-gradient-to-br from-blue-500/30 via-purple-500/30 to-pink-500/30 blur-3xl animate-pulse-slow opacity-70 group-hover:opacity-90"></div>
+
+                  {/* Orbiting dots effect with neon glow */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-full h-full relative animate-spin-slow">
+                      {/* Dot 1 */}
+                      <div className="absolute w-4 h-4 bg-cyan-400 rounded-full top-0 left-1/2 -translate-x-1/2 animate-neon-glow shadow-[0_0_12px_2px_rgba(0,255,255,0.8)]"></div>
+                      {/* Dot 2 */}
+                      <div className="absolute w-3 h-3 bg-pink-400 rounded-full bottom-0 left-1/2 -translate-x-1/2 animate-neon-glow delay-200 shadow-[0_0_10px_2px_rgba(255,105,180,0.8)]"></div>
+                      {/* Dot 3 */}
+                      <div className="absolute w-3.5 h-3.5 bg-purple-400 rounded-full top-1/2 left-0 -translate-y-1/2 animate-neon-glow delay-400 shadow-[0_0_10px_2px_rgba(147,51,234,0.8)]"></div>
+                      {/* Dot 4 */}
+                      <div className="absolute w-2.5 h-2.5 bg-yellow-400 rounded-full top-1/2 right-0 -translate-y-1/2 animate-neon-glow delay-600 shadow-[0_0_8px_2px_rgba(234,179,8,0.8)]"></div>
+                    </div>
+                  </div>
+
+                  {/* Inner profile container with gradient border */}
                   <div
                     className={`absolute inset-3 sm:inset-4 rounded-full flex items-center justify-center ${
-                      isDark ? "bg-gray-800/95" : "bg-white/95"
-                    } backdrop-blur-md transition-all duration-300 hover:shadow-inner`}
+                      isDark ? "bg-gray-800/90" : "bg-white/90"
+                    } backdrop-blur-md transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] border-2 border-transparent bg-clip-padding bg-gradient-to-br from-blue-500 to-purple-600`}
                   >
                     <img
                       src={HeroProfile}
                       alt="User profile"
-                      className="w-full h-full object-cover rounded-full"
+                      className="w-full h-full object-cover rounded-full transform group-hover:scale-110 transition-transform duration-300"
                     />
                   </div>
                 </div>
@@ -290,7 +340,7 @@ const Home: React.FC = () => {
                   <div className="relative h-48 overflow-hidden">
                     <img
                       src={project.image}
-                      alt={project.title}
+                      alt={project.alt}
                       className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
                       loading="lazy"
                     />
