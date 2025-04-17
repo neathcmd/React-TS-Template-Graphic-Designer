@@ -18,7 +18,7 @@ const Header = () => {
       navItems: [
         { label: "Home", link: "/" },
         { label: "About", link: "/about" },
-        { label: "Projects", link: "/projects" },
+        { label: "Projects", link: "/project" },
         { label: "Contact", link: "/contact" },
       ],
       headerClasses: `sticky top-0 z-50 shadow-md px-4 py-3 transition-all duration-300 ${

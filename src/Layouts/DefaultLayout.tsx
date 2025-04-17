@@ -18,7 +18,7 @@ const DefaultLayout: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   return (
-    <div className="bg-white text-black dark:bg-[#121212] dark:text-white transition-colors duration-300 min-h-screen flex flex-col">
+    <div className="bg-white text-black dark:bg-[#121212] dark:text-white transition-colors duration-300 w-full min-h-screen flex flex-col">
       <main className="flex-1">{children}</main>
     </div>
   );
